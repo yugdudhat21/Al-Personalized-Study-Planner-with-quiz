@@ -25,9 +25,27 @@ export async function POST(req) {
       globalThis.DOMMatrix = DOMMatrixMock;
     }
 
-    const pdfParse = require('pdf-parse');
-    const pdfData = await pdfParse(buffer);
-    const extractedText = pdfData.text || '';
+    let extractedText = '';
+    let numPages = 1;
+
+    const pdfParseModule = require('pdf-parse');
+
+    // Handle both pdf-parse v2 (PDFParse class) and v1 (function)
+    if (pdfParseModule.PDFParse) {
+      const parser = new pdfParseModule.PDFParse({ data: buffer });
+      await parser.load();
+      const result = await parser.getText();
+      extractedText = result.text || '';
+      numPages = parser.doc?.numPages || result.pages || 1;
+    } else if (typeof pdfParseModule === 'function') {
+      const pdfData = await pdfParseModule(buffer);
+      extractedText = pdfData.text || '';
+      numPages = pdfData.numpages || 1;
+    } else if (pdfParseModule.default && typeof pdfParseModule.default === 'function') {
+      const pdfData = await pdfParseModule.default(buffer);
+      extractedText = pdfData.text || '';
+      numPages = pdfData.numpages || 1;
+    }
 
     // Clean up excessive whitespace and non-printable characters
     const cleanedText = extractedText
@@ -38,7 +56,7 @@ export async function POST(req) {
     return NextResponse.json({
       success: true,
       text: cleanedText,
-      pages: pdfData.numpages || 1,
+      pages: numPages,
     });
   } catch (error) {
     console.error('PDF Parse Error:', error);

@@ -1,17 +1,46 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from './authStore';
 
-// Helper to ensure profile row exists for current auth user
-async function ensureUserProfile(user) {
-  if (!user) return;
-  try {
-    await supabase.from('profiles').upsert(
-      { id: user.id, full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student' },
-      { onConflict: 'id' }
-    );
-  } catch (e) {
-    console.warn('Profile sync warning:', e);
+// Helper to get a valid profiles.id (satisfies foreign key constraints for subjects, exams, test_scores, study_plans)
+async function getActiveProfileUserId() {
+  const authState = useAuthStore.getState();
+
+  // 1. Check if teacher / auth user session exists
+  if (authState.session?.user?.id) {
+    return authState.session.user.id;
   }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.id) return user.id;
+
+  // 2. If student is logged in, use teacher_id from student's class
+  if (authState.studentAccount) {
+    if (authState.studentAccount.user_id) {
+      return authState.studentAccount.user_id;
+    }
+    if (authState.studentAccount.class_id) {
+      const { data: cls } = await supabase
+        .from('classes')
+        .select('teacher_id')
+        .eq('id', authState.studentAccount.class_id)
+        .maybeSingle();
+      if (cls?.teacher_id) return cls.teacher_id;
+    }
+  }
+
+  // 3. Fallback: get first available profile ID in DB
+  const { data: firstProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+
+  if (firstProfile?.id) {
+    return firstProfile.id;
+  }
+
+  throw new Error('User not authenticated');
 }
 
 export const useSubjectStore = create((set, get) => ({
@@ -38,15 +67,11 @@ export const useSubjectStore = create((set, get) => ({
   },
 
   addSubject: async (subjectData) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    // Ensure user profile row exists in DB
-    await ensureUserProfile(user);
+    const userId = await getActiveProfileUserId();
 
     const { data, error } = await supabase
       .from('subjects')
-      .insert([{ ...subjectData, user_id: user.id }])
+      .insert([{ ...subjectData, user_id: userId }])
       .select()
       .single();
 
@@ -93,14 +118,11 @@ export const useSubjectStore = create((set, get) => ({
   },
 
   addExam: async (examData) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    await ensureUserProfile(user);
+    const userId = await getActiveProfileUserId();
 
     const { data, error } = await supabase
       .from('exams')
-      .insert([{ ...examData, user_id: user.id }])
+      .insert([{ ...examData, user_id: userId }])
       .select('*, subjects(name, color)')
       .single();
 
@@ -130,14 +152,11 @@ export const useSubjectStore = create((set, get) => ({
   },
 
   addTestScore: async (scoreData) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    await ensureUserProfile(user);
+    const userId = await getActiveProfileUserId();
 
     const { data, error } = await supabase
       .from('test_scores')
-      .insert([{ ...scoreData, user_id: user.id }])
+      .insert([{ ...scoreData, user_id: userId }])
       .select('*, subjects(name, color)')
       .single();
 

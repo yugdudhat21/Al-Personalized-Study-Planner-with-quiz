@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    const quizId = params.quizId;
+    const resolvedParams = await context.params;
+    const quizId = resolvedParams?.quizId;
 
     if (!quizId) {
       return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });

@@ -43,7 +43,7 @@ export default function PlannerPage() {
       });
 
       setDraftPlan(generatedSessions);
-      toast.success('Study plan generated successfully!');
+      toast.success('Personalized study plan generated successfully!');
     } catch (err) {
       toast.error(err.message || 'Plan generation failed');
     }
@@ -54,7 +54,7 @@ export default function PlannerPage() {
 
     try {
       await saveGeneratedPlan(draftPlan, startDate);
-      toast.success('Generated plan saved to database!');
+      toast.success('Generated plan saved to schedule!');
       setDraftPlan(null);
     } catch (err) {
       toast.error(err.message || 'Failed to save plan');
@@ -82,7 +82,7 @@ export default function PlannerPage() {
             <Sparkles className="w-7 h-7 text-purple-500" /> AI Study Schedule Generator
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Uses Ollama local AI model (`qwen2.5:7b`) with automatic fallback to prioritize exams, weak subjects, and 50m study/10m break cycles.
+            Powered by Google Gemini AI & Smart Analytics Engine to prioritize your upcoming exams, weightages, and weak subjects.
           </p>
         </div>
       </div>
@@ -170,9 +170,9 @@ export default function PlannerPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Generated AI Draft Schedule</h3>
-              <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-500 font-semibold text-xs flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5" /> Engine: {generationSource === 'ollama' ? 'Ollama Local AI (qwen2.5)' : 'Fallback Algorithm'}
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Generated AI Schedule</h3>
+              <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 font-semibold text-xs flex items-center gap-1.5 border border-indigo-500/20">
+                <Cpu className="w-3.5 h-3.5" /> Engine: {generationSource === 'gemini' ? 'Google Gemini AI' : 'Smart Heuristic Engine'}
               </span>
             </div>
           </div>
@@ -188,7 +188,7 @@ export default function PlannerPage() {
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <span className="text-xs font-bold text-gray-400 w-16">{session.date}</span>
+                  <span className="text-xs font-bold text-gray-400 w-24">{session.date}</span>
                   <div>
                     <h4 className="font-bold text-sm text-gray-900 dark:text-white">{session.topic || session.subject}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

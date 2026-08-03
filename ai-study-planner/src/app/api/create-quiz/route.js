@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { generateAiContent } from '@/lib/ai';
 
 export async function POST(req) {
   try {
@@ -14,14 +15,13 @@ export async function POST(req) {
 
     // AI Auto-Generation Flow if requested
     if (generateWithAi && quizQuestions.length === 0) {
-      const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434';
       const prompt = `Generate a ${questionCount}-question multiple-choice quiz on the topic "${topic}".
 Return ONLY valid JSON format:
 {
   "questions": [
     {
-      "question_text": "What is the capital of France?",
-      "options": ["Paris", "London", "Berlin", "Madrid"],
+      "question_text": "Sample question about ${topic}?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
       "correct_option": 0,
       "topic": "${topic}"
     }
@@ -29,28 +29,18 @@ Return ONLY valid JSON format:
 }`;
 
       try {
-        const aiRes = await fetch(`${ollamaUrl}/api/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'qwen2.5:7b',
-            prompt,
-            stream: false,
-          }),
-        });
-
-        if (aiRes.ok) {
-          const aiData = await aiRes.json();
-          const jsonMatch = (aiData.response || '').match(/\{[\s\S]*\}/);
+        const rawResponse = await generateAiContent(prompt, true);
+        if (rawResponse) {
+          const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.questions) {
+            if (parsed.questions && Array.isArray(parsed.questions)) {
               quizQuestions = parsed.questions;
             }
           }
         }
       } catch (err) {
-        console.warn('Ollama quiz generation fallback:', err.message);
+        console.warn('AI quiz generation fallback:', err.message);
       }
 
       // Fallback quiz generator if AI call failed

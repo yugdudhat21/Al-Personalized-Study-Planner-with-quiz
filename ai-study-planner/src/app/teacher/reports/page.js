@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import TeacherLayout from '@/components/layout/TeacherLayout';
-import { FileSpreadsheet, Download, RefreshCw, GraduationCap, Award, AlertTriangle, Sparkles } from 'lucide-react';
+import { FileSpreadsheet, Download, RefreshCw, GraduationCap, AlertTriangle, Sparkles } from 'lucide-react';
 import { useTeacherStore } from '@/store/teacherStore';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export default function TeacherReportsPage() {
   const { user } = useAuthStore();
@@ -76,23 +75,119 @@ export default function TeacherReportsPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!reportRef.current || !reportData) return;
+    if (!reportData) return;
 
     setDownloadingPdf(true);
     try {
-      const canvas = await html2canvas(reportRef.current, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const studentName = reportData.student?.full_name || 'Student';
+      const studentId = reportData.student?.student_id || '-';
+      const className = reportData.student?.classes?.name || 'Class';
+      const dateStr = new Date().toLocaleDateString();
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Report_${reportData.student?.student_id || 'Student'}.pdf`);
+      // Header Background
+      pdf.setFillColor(15, 23, 42); // Dark Slate
+      pdf.rect(0, 0, 210, 42, 'F');
 
-      toast.success('PDF Progress Report downloaded!');
+      // Header Title
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('ExamPilot AI - Student Performance Report', 15, 22);
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Report Generated: ${dateStr}`, 15, 32);
+
+      // Student Info Box
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(15, 50, 180, 25, 'F');
+
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Student: ${studentName}`, 20, 60);
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Student ID: ${studentId}   |   Class: ${className}`, 20, 68);
+
+      // Summary Metrics Cards
+      const avgPct = `${reportData.analyticsSummary?.averageQuizPercentage || 0}%`;
+      const taken = `${reportData.analyticsSummary?.totalQuizzesTaken || 0}`;
+      const weakCount = `${reportData.analyticsSummary?.flaggedWeakTopicsCount || 0}`;
+
+      // Card 1: Quiz Average
+      pdf.setFillColor(238, 242, 255);
+      pdf.rect(15, 85, 55, 30, 'F');
+      pdf.setTextColor(79, 70, 229);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('QUIZ AVERAGE', 20, 94);
+      pdf.setFontSize(18);
+      pdf.text(avgPct, 20, 107);
+
+      // Card 2: Quizzes Taken
+      pdf.setFillColor(239, 246, 255);
+      pdf.rect(77, 85, 55, 30, 'F');
+      pdf.setTextColor(37, 99, 235);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('QUIZZES TAKEN', 82, 94);
+      pdf.setFontSize(18);
+      pdf.text(taken, 82, 107);
+
+      // Card 3: Weak Topics
+      pdf.setFillColor(254, 243, 199);
+      pdf.rect(140, 85, 55, 30, 'F');
+      pdf.setTextColor(217, 119, 6);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('WEAK TOPICS', 145, 94);
+      pdf.setFontSize(18);
+      pdf.text(weakCount, 145, 107);
+
+      // AI Prediction Section
+      pdf.setFillColor(243, 232, 255);
+      pdf.rect(15, 125, 180, 25, 'F');
+      pdf.setTextColor(126, 34, 206);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('AI PERFORMANCE PREDICTION:', 20, 134);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(reportData.analyticsSummary?.predictionSummary || 'No prediction data available', 20, 143);
+
+      // Weak Topics Section
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Identified Weak Topics:', 15, 163);
+
+      let yPos = 173;
+      if (!reportData.weakTopics || reportData.weakTopics.length === 0) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 116, 139);
+        pdf.text('No weak topics flagged. Great performance!', 15, yPos);
+      } else {
+        reportData.weakTopics.forEach((wt) => {
+          pdf.setFillColor(254, 243, 199);
+          pdf.rect(15, yPos - 5, 180, 10, 'F');
+          pdf.setTextColor(180, 83, 9);
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`• ${wt.topic || 'Topic'} (Accuracy: ${wt.accuracy || 0}%)`, 20, yPos);
+          yPos += 14;
+        });
+      }
+
+      // Save PDF
+      pdf.save(`Report_${studentId}_${studentName.replace(/\s+/g, '_')}.pdf`);
+      toast.success('PDF Performance Report downloaded!');
     } catch (err) {
-      toast.error('Failed to generate PDF');
+      console.error('PDF error:', err);
+      toast.error('Failed to generate PDF: ' + (err.message || 'Unknown error'));
     } finally {
       setDownloadingPdf(false);
     }
@@ -173,7 +268,7 @@ export default function TeacherReportsPage() {
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Select an enrolled student to view and download their performance report.</p>
             </div>
           ) : (
-            /* Printable Report Area */
+            /* Printable Report Preview Area */
             <div ref={reportRef} className="p-8 bg-slate-950 text-white rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">

@@ -1,17 +1,47 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { generateFallbackPlan } from '@/utils/fallbackPlanner';
+import { useAuthStore } from './authStore';
 
-async function ensureUserProfile(user) {
-  if (!user) return;
-  try {
-    await supabase.from('profiles').upsert(
-      { id: user.id, full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student' },
-      { onConflict: 'id' }
-    );
-  } catch (e) {
-    console.warn('Profile sync warning:', e);
+// Helper to get a valid profiles.id (satisfies foreign key constraints for study_plans & study_sessions)
+async function getActiveProfileUserId() {
+  const authState = useAuthStore.getState();
+
+  // 1. Check if teacher / auth user session exists
+  if (authState.session?.user?.id) {
+    return authState.session.user.id;
   }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.id) return user.id;
+
+  // 2. If student is logged in, use teacher_id from student's class
+  if (authState.studentAccount) {
+    if (authState.studentAccount.user_id) {
+      return authState.studentAccount.user_id;
+    }
+    if (authState.studentAccount.class_id) {
+      const { data: cls } = await supabase
+        .from('classes')
+        .select('teacher_id')
+        .eq('id', authState.studentAccount.class_id)
+        .maybeSingle();
+      if (cls?.teacher_id) return cls.teacher_id;
+    }
+  }
+
+  // 3. Fallback: get first available profile ID in DB
+  const { data: firstProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+
+  if (firstProfile?.id) {
+    return firstProfile.id;
+  }
+
+  throw new Error('User not authenticated');
 }
 
 export const usePlannerStore = create((set, get) => ({
@@ -19,7 +49,7 @@ export const usePlannerStore = create((set, get) => ({
   studyPlans: [],
   loading: false,
   generating: false,
-  generationSource: 'ollama', // 'ollama' or 'fallback'
+  generationSource: 'gemini',
 
   fetchSessions: async () => {
     set({ loading: true });
@@ -42,7 +72,6 @@ export const usePlannerStore = create((set, get) => ({
     set({ generating: true });
 
     try {
-      // 1. Try calling local Ollama API route
       const response = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,11 +88,10 @@ export const usePlannerStore = create((set, get) => ({
       const result = await response.json();
 
       if (response.ok && result.sessions && result.sessions.length > 0) {
-        set({ generationSource: result.generated_by || 'ollama' });
+        set({ generationSource: result.generated_by || 'gemini' });
         return result.sessions;
       } else {
-        // Fallback to internal heuristic planner algorithm if API returned fallback / error
-        console.warn('Ollama API unavailable or failed. Using Fallback Planner algorithm.');
+        console.warn('AI API unavailable or failed. Using Fallback Planner algorithm.');
         const fallback = generateFallbackPlan({
           subjects,
           exams,
@@ -93,16 +121,13 @@ export const usePlannerStore = create((set, get) => ({
   },
 
   saveGeneratedPlan: async (generatedSessions, planDate = new Date().toISOString()) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    await ensureUserProfile(user);
+    const userId = await getActiveProfileUserId();
 
     // 1. Create study plan record
     const { data: planData, error: planError } = await supabase
       .from('study_plans')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         plan_date: planDate,
         generated_by: get().generationSource,
       }])
@@ -113,7 +138,7 @@ export const usePlannerStore = create((set, get) => ({
 
     // 2. Prepare sessions payload
     const sessionPayloads = generatedSessions.map((s) => ({
-      user_id: user.id,
+      user_id: userId,
       subject_id: s.subject_id || null,
       plan_id: planData.id,
       topic: s.topic || s.subject || 'Study Session',

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    const studentId = params.studentId;
+    const resolvedParams = await context.params;
+    const studentId = resolvedParams?.studentId;
 
     if (!studentId) {
       return NextResponse.json({ error: 'Student ID is required' }, { status: 400 });

@@ -21,6 +21,8 @@ export const useAuthStore = create((set, get) => ({
           set({
             studentAccount: parsed,
             role: 'student',
+            user: { id: parsed.id, email: `${parsed.student_id}@student.local` },
+            profile: { full_name: parsed.full_name, role: 'student' },
             loading: false,
           });
           return;

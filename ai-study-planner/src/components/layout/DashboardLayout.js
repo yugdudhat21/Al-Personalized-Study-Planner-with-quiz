@@ -29,11 +29,12 @@ export default function DashboardLayout({ children }) {
     return () => clearTimeout(timer);
   }, []);
 
+  const isLandingPage = pathname === '/';
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/student-login' || pathname === '/teacher/login';
   const isTeacherRoute = pathname.startsWith('/teacher');
 
   useEffect(() => {
-    if (!loading && !user && !isAuthPage && !isTeacherRoute) {
+    if (!loading && !user && !isAuthPage && !isTeacherRoute && !isLandingPage) {
       router.push('/login');
     }
 
@@ -41,16 +42,26 @@ export default function DashboardLayout({ children }) {
     if (!loading && user && (role === 'teacher' || role === 'admin') && pathname === '/dashboard') {
       router.push('/teacher/dashboard');
     }
-  }, [user, role, loading, pathname, router, isAuthPage, isTeacherRoute]);
+  }, [user, role, loading, pathname, router, isAuthPage, isTeacherRoute, isLandingPage]);
 
   useEffect(() => {
-    if (user && !isAuthPage && !isTeacherRoute) {
+    if (user && !isAuthPage && !isTeacherRoute && !isLandingPage) {
       fetchSubjects();
       fetchExams();
       fetchTestScores();
       fetchSessions();
     }
-  }, [user, isAuthPage, isTeacherRoute]);
+  }, [user, isAuthPage, isTeacherRoute, isLandingPage]);
+
+  // If Landing Page, render cleanly without dashboard frame
+  if (isLandingPage) {
+    return (
+      <>
+        <Toaster position="top-right" />
+        {children}
+      </>
+    );
+  }
 
   // If Teacher route, let TeacherLayout handle layout exclusively
   if (isTeacherRoute) {
