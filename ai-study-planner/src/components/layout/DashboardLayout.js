@@ -30,11 +30,12 @@ export default function DashboardLayout({ children }) {
   }, []);
 
   const isLandingPage = pathname === '/';
+  const isPrivacyPage = pathname === '/privacy';
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/student-login' || pathname === '/teacher/login';
   const isTeacherRoute = pathname.startsWith('/teacher');
 
   useEffect(() => {
-    if (!loading && !user && !isAuthPage && !isTeacherRoute && !isLandingPage) {
+    if (!loading && !user && !isAuthPage && !isTeacherRoute && !isLandingPage && !isPrivacyPage) {
       router.push('/login');
     }
 
@@ -42,16 +43,16 @@ export default function DashboardLayout({ children }) {
     if (!loading && user && (role === 'teacher' || role === 'admin') && pathname === '/dashboard') {
       router.push('/teacher/dashboard');
     }
-  }, [user, role, loading, pathname, router, isAuthPage, isTeacherRoute, isLandingPage]);
+  }, [user, role, loading, pathname, router, isAuthPage, isTeacherRoute, isLandingPage, isPrivacyPage]);
 
   useEffect(() => {
-    if (user && !isAuthPage && !isTeacherRoute && !isLandingPage) {
+    if (user && !isAuthPage && !isTeacherRoute && !isLandingPage && !isPrivacyPage) {
       fetchSubjects();
       fetchExams();
       fetchTestScores();
       fetchSessions();
     }
-  }, [user, isAuthPage, isTeacherRoute, isLandingPage]);
+  }, [user, isAuthPage, isTeacherRoute, isLandingPage, isPrivacyPage]);
 
   // If Landing Page, render cleanly without dashboard frame
   if (isLandingPage) {
@@ -68,8 +69,8 @@ export default function DashboardLayout({ children }) {
     return <>{children}</>;
   }
 
-  // Always render Auth pages cleanly without Sidebar/Topbar
-  if (isAuthPage) {
+  // Always render Auth & Privacy pages cleanly without Sidebar/Topbar
+  if (isAuthPage || isPrivacyPage) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4 bg-slate-900 text-slate-100">
         <Toaster position="top-right" />

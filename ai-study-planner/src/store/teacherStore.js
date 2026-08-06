@@ -128,6 +128,24 @@ export const useTeacherStore = create((set, get) => ({
     }));
   },
 
+  deleteQuiz: async (quizId) => {
+    try {
+      // Delete questions & quiz results associated with this quiz
+      await supabase.from('questions').delete().eq('quiz_id', quizId);
+      await supabase.from('quiz_results').delete().eq('quiz_id', quizId);
+
+      const { error } = await supabase.from('quizzes').delete().eq('id', quizId);
+      if (error) throw error;
+
+      set((state) => ({
+        quizzes: state.quizzes.filter((q) => q.id !== quizId),
+      }));
+    } catch (err) {
+      console.error('Delete quiz error:', err);
+      throw err;
+    }
+  },
+
   fetchAssignments: async (classId) => {
     try {
       let query = supabase.from('assignments').select('*, classes(name)');

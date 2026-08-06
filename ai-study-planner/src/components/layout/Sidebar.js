@@ -18,6 +18,7 @@ import {
   LogOut,
   GraduationCap,
   ArrowRight,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -26,6 +27,7 @@ const studentNavItems = [
   { label: 'Subjects', href: '/subjects', icon: BookOpen, color: 'text-cyan-500' },
   { label: 'Exams', href: '/exams', icon: CalendarCheck, color: 'text-indigo-500' },
   { label: 'AI Planner', href: '/planner', icon: Sparkles, color: 'text-purple-500' },
+  { label: 'Notes Summarizer', href: '/summarizer', icon: FileText, color: 'text-violet-500' },
   { label: 'Pomodoro Timer', href: '/timer', icon: Timer, color: 'text-amber-500' },
   { label: 'Class Quizzes', href: '/quizzes', icon: FileQuestion, color: 'text-emerald-500' },
   { label: 'Assignments', href: '/assignments', icon: BookCheck, color: 'text-pink-500' },
@@ -103,7 +105,14 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
       </div>
 
       {/* Bottom Sign Out */}
-      <div className="pt-3 mt-4 border-t border-slate-200 dark:border-slate-800">
+      <div className="pt-3 mt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <Link
+          href="/privacy"
+          className="flex items-center gap-2 px-4 text-[11px] font-bold text-slate-400 hover:text-purple-400 transition"
+        >
+          <span>🛡️ DPDP 2023 Privacy Policy</span>
+        </Link>
+
         <button
           onClick={signOut}
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl font-bold text-sm text-red-500 hover:bg-red-500/10 transition-all"

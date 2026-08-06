@@ -24,31 +24,30 @@ export async function POST(req) {
 
     let prompt = '';
     if (documentContent && documentContent.trim().length > 0) {
-      prompt = `You are an exam quiz generator. Read the study material and create exactly ${questionCount} multiple-choice questions.
+      prompt = `You are a strict exam question author. Read the provided Study Material below and create exactly ${questionCount} multiple-choice questions based ONLY on facts, definitions, and concepts directly stated in the Study Material.
 
-Rules:
-- Return ONLY valid JSON.
-- No markdown, no explanation.
-- Each question must have 4 options.
-- Use simple student-friendly language.
-- Cover important concepts from the material.
-- Keep each question under 20 words if possible.
+CRITICAL INSTRUCTIONS:
+- EVERY question, correct answer, and option MUST come strictly from the provided Study Material.
+- DO NOT use outside topics, general knowledge, or example questions (such as React, coding, math, etc.) unless they are explicitly in the Study Material.
+- Return ONLY valid JSON format.
+- No markdown formatting, no extra explanation text.
+- Provide 4 distinct options per question.
 
-JSON format:
+JSON Schema required:
 [
   {
-    "question": "What is React?",
+    "question": "Question derived directly from the text?",
     "options": [
-      "Library",
-      "Database",
-      "Server",
-      "Compiler"
+      "Correct answer choice from text",
+      "Distractor choice 1 from text",
+      "Distractor choice 2 from text",
+      "Distractor choice 3 from text"
     ],
-    "answer": "Library"
+    "answer": "Correct answer choice from text"
   }
 ]
 
-Study material:
+Study Material Text:
 ${documentContent.trim().slice(0, 8000)}`;
     } else {
       prompt = `You are an exam quiz generator. Create exactly ${questionCount} multiple-choice questions for Subject "${subject}", Chapter "${chapter}", Difficulty Level ${difficulty}/5.
@@ -58,8 +57,8 @@ Rules:
 - No markdown, no explanation.
 - Each question must have 4 options.
 - Use simple student-friendly language.
-- Cover important concepts.
-- Keep each question under 20 words if possible.
+- Cover important concepts from topic "${chapter}".
+- Keep each question concise.
 
 JSON format:
 [
@@ -107,7 +106,7 @@ JSON format:
               question_text: qText,
               options: opts,
               correct_option: correctIdx,
-              topic: q.topic || chapter || 'PDF Notes',
+              topic: q.topic || chapter || 'PDF Content',
             };
           });
         }
@@ -116,15 +115,41 @@ JSON format:
       console.warn('AI quiz generator warning:', err.message);
     }
 
-    // Fallback if AI response was empty
+    // Smart Fallback if AI response was empty or failed
     if (quizQuestions.length === 0) {
-      for (let i = 1; i <= questionCount; i++) {
-        quizQuestions.push({
-          question_text: `${subject} (${chapter}) Assessment Question #${i}`,
-          options: [`Correct Concept Option A`, `Distractor Option B`, `Alternative Choice C`, `Choice D`],
-          correct_option: 0,
-          topic: chapter || 'PDF Notes',
-        });
+      if (documentContent && documentContent.trim().length > 0) {
+        // Extract clean sentences from uploaded document
+        const sentences = documentContent
+          .split(/(?<=[.?!])\s+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 20 && s.length < 180);
+
+        for (let i = 0; i < Math.min(questionCount, sentences.length || questionCount); i++) {
+          const sentence = sentences[i] || `Key concept from ${title}`;
+          const words = sentence.split(' ').filter(w => w.length > 4);
+          const keyTerm = words[0] || 'concept';
+          
+          quizQuestions.push({
+            question_text: `According to the uploaded document material: "${sentence.slice(0, 100)}..." what is discussed?`,
+            options: [
+              `Correct concept regarding ${keyTerm}`,
+              `Incorrect interpretation of ${keyTerm}`,
+              `Unrelated concept not mentioned in document`,
+              `Alternative distractor choice`
+            ],
+            correct_option: 0,
+            topic: chapter || 'PDF Document Notes',
+          });
+        }
+      } else {
+        for (let i = 1; i <= questionCount; i++) {
+          quizQuestions.push({
+            question_text: `${subject} (${chapter}) Assessment Question #${i}`,
+            options: [`Core Concept Option A`, `Distractor Option B`, `Alternative Choice C`, `Choice D`],
+            correct_option: 0,
+            topic: chapter || 'PDF Notes',
+          });
+        }
       }
     }
 

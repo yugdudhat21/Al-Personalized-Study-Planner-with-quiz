@@ -77,6 +77,22 @@ export default function StudentLoginPage() {
           </div>
         </div>
 
+        <div className="flex items-start gap-2 pt-1">
+          <input
+            type="checkbox"
+            id="dpdpConsentStudent"
+            required
+            defaultChecked
+            className="mt-0.5 rounded accent-blue-600 cursor-pointer"
+          />
+          <label htmlFor="dpdpConsentStudent" className="text-[11px] text-gray-500 dark:text-gray-400">
+            I consent to data processing under{' '}
+            <Link href="/privacy" className="text-cyan-400 font-bold hover:underline" target="_blank">
+              DPDP Act 2023 & Privacy Policy
+            </Link>.
+          </label>
+        </div>
+
         <button
           type="submit"
           disabled={loading}

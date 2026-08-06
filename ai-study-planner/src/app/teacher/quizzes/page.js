@@ -24,7 +24,7 @@ import toast from 'react-hot-toast';
 
 export default function TeacherQuizzesPage() {
   const { user } = useAuthStore();
-  const { classes, quizzes, fetchClasses, fetchQuizzes, togglePublishQuiz } = useTeacherStore();
+  const { classes, quizzes, fetchClasses, fetchQuizzes, togglePublishQuiz, deleteQuiz } = useTeacherStore();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loadingAi, setLoadingAi] = useState(false);
@@ -44,6 +44,19 @@ export default function TeacherQuizzesPage() {
   const [editingQuestions, setEditingQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [savingQuiz, setSavingQuiz] = useState(false);
+
+  const handleDeleteQuiz = async (quizId, quizTitle) => {
+    if (!window.confirm(`Are you sure you want to delete quiz "${quizTitle}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteQuiz(quizId);
+      toast.success(`Quiz "${quizTitle}" deleted successfully!`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete quiz');
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -115,6 +128,8 @@ export default function TeacherQuizzesPage() {
           class_id: classId,
           title,
           topic,
+          chapter: topic,
+          subject: 'Teacher Notes',
           documentContent,
           generateWithAi,
           questionCount,
@@ -291,12 +306,22 @@ export default function TeacherQuizzesPage() {
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleOpenEditor(q)}
-                    className="px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-purple-500/10 hover:text-purple-500 transition flex items-center gap-1.5"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" /> Edit Quiz
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleOpenEditor(q)}
+                      className="px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-purple-500/10 hover:text-purple-500 transition flex items-center gap-1.5"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" /> Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteQuiz(q.id, q.title)}
+                      className="p-2 rounded-xl font-bold text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 transition flex items-center justify-center"
+                      title="Delete Quiz"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => handleTogglePublish(q.id, q.published)}
