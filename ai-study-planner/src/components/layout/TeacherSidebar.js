@@ -38,7 +38,7 @@ export default function TeacherSidebar({ mobileOpen = false, setMobileOpen = () 
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out flex flex-col justify-between p-4 shadow-xl overflow-y-auto ${
+      className={`print:hidden fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ease-in-out flex flex-col justify-between p-4 shadow-xl overflow-y-auto ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}
     >

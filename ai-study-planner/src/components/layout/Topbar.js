@@ -10,7 +10,7 @@ export default function Topbar({ onMenuClick }) {
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Student';
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-sm">
+    <header className="print:hidden sticky top-0 z-30 w-full bg-white/80 dark:bg-[#111827]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-sm">
       {/* Mobile Drawer Trigger & User Greeting */}
       <div className="flex items-center gap-3">
         <button

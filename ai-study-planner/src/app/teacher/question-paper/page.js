@@ -16,7 +16,7 @@ export default function QuestionPaperPage() {
   const [examTitle, setExamTitle] = useState('Mid-Term Examination 2026');
   const [subject, setSubject] = useState('Physics');
   const [topic, setTopic] = useState('Laws of Motion, Work Energy, & Thermodynamics');
-  const [totalMarks, setTotalMarks] = useState(50);
+  const [totalMarks, setTotalMarks] = useState(100);
   const [loading, setLoading] = useState(false);
   const [paper, setPaper] = useState(null);
   const [showAnswerKey, setShowAnswerKey] = useState(false);
@@ -47,7 +47,7 @@ export default function QuestionPaperPage() {
 
       if (data.success && data.paper) {
         setPaper(data.paper);
-        toast.success('Generated AI Question Paper with Answer Key!');
+        toast.success(`Generated ${data.paper.totalMarks} Marks AI Question Paper with Answer Key!`);
       } else {
         toast.error(data.error || 'Failed to generate question paper.');
       }
@@ -65,6 +65,27 @@ export default function QuestionPaperPage() {
 
   return (
     <TeacherLayout>
+      {/* Strict Print CSS Overrides */}
+      <style jsx global>{`
+        @media print {
+          body, html {
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          header, aside, .print\\:hidden, nav {
+            display: none !important;
+          }
+          .md\\:ml-64 {
+            margin-left: 0 !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+
       <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 print:p-0 print:m-0 print:max-w-none">
         {/* Top Bar - Hide on Print */}
         <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-blue-900/40 border border-purple-500/20 backdrop-blur-xl p-6 rounded-3xl shadow-2xl">
@@ -194,7 +215,7 @@ export default function QuestionPaperPage() {
           </div>
 
           {/* Paper Display Area (8 cols) */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 print:w-full print:col-span-12">
             {paper ? (
               <div className="bg-white text-slate-900 p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 font-serif">
                 {/* Paper Header */}
