@@ -9,7 +9,7 @@ export default function StudentAnnouncementsPage() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements');
+      const res = await fetch('/api/announcements?role=student');
       const data = await res.json();
       if (data.success) {
         setAnnouncements(data.announcements || []);

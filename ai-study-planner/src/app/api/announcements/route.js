@@ -10,6 +10,7 @@ let announcementsStore = [
     category: 'Exam Alert',
     author: 'Prof. Sharma (Physics Dept)',
     date: 'Today, 09:30 AM',
+    isPublished: true,
   },
   {
     id: 'ann-2',
@@ -19,11 +20,20 @@ let announcementsStore = [
     category: 'Homework',
     author: 'Dr. Mehta (Math Dept)',
     date: 'Yesterday, 04:15 PM',
+    isPublished: true,
   },
 ];
 
-export async function GET() {
-  return NextResponse.json({ success: true, announcements: announcementsStore });
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const isStudent = searchParams.get('role') === 'student';
+
+  // If student requesting, filter to only published announcements
+  const list = isStudent
+    ? announcementsStore.filter((item) => item.isPublished)
+    : announcementsStore;
+
+  return NextResponse.json({ success: true, announcements: list });
 }
 
 export async function POST(req) {
@@ -42,6 +52,7 @@ export async function POST(req) {
       category,
       author: 'Teacher Portal (Faculty)',
       date: 'Just now',
+      isPublished: true,
     };
 
     announcementsStore.unshift(newAnnouncement);
@@ -50,5 +61,50 @@ export async function POST(req) {
   } catch (err) {
     console.error('Error posting announcement:', err);
     return NextResponse.json({ error: 'Failed to post announcement' }, { status: 500 });
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const { id, title, content, priority, category, isPublished } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Announcement ID is required' }, { status: 400 });
+    }
+
+    const index = announcementsStore.findIndex((a) => a.id === id);
+    if (index === -1) {
+      return NextResponse.json({ error: 'Announcement not found' }, { status: 404 });
+    }
+
+    // Update properties if provided
+    if (title !== undefined) announcementsStore[index].title = title;
+    if (content !== undefined) announcementsStore[index].content = content;
+    if (priority !== undefined) announcementsStore[index].priority = priority;
+    if (category !== undefined) announcementsStore[index].category = category;
+    if (isPublished !== undefined) announcementsStore[index].isPublished = isPublished;
+
+    return NextResponse.json({ success: true, announcement: announcementsStore[index] });
+  } catch (err) {
+    console.error('Error updating announcement:', err);
+    return NextResponse.json({ error: 'Failed to update announcement' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Announcement ID is required' }, { status: 400 });
+    }
+
+    announcementsStore = announcementsStore.filter((a) => a.id !== id);
+
+    return NextResponse.json({ success: true, id });
+  } catch (err) {
+    console.error('Error deleting announcement:', err);
+    return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 });
   }
 }

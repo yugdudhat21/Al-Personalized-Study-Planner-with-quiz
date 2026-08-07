@@ -11,7 +11,7 @@ export default function AnnouncementsWidget() {
   useEffect(() => {
     async function fetchAnnouncements() {
       try {
-        const res = await fetch('/api/announcements');
+        const res = await fetch('/api/announcements?role=student');
         const data = await res.json();
         if (data.success) {
           setAnnouncements(data.announcements || []);
