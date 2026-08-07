@@ -19,14 +19,18 @@ import {
   GraduationCap,
   ArrowRight,
   FileText,
+  Layers,
+  Megaphone,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const studentNavItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, color: 'text-blue-500' },
+  { label: 'Class Notices', href: '/announcements', icon: Megaphone, color: 'text-red-400' },
   { label: 'Subjects', href: '/subjects', icon: BookOpen, color: 'text-cyan-500' },
   { label: 'Exams', href: '/exams', icon: CalendarCheck, color: 'text-indigo-500' },
   { label: 'AI Planner', href: '/planner', icon: Sparkles, color: 'text-purple-500' },
+  { label: 'AI Flashcards', href: '/flashcards', icon: Layers, color: 'text-indigo-400' },
   { label: 'Notes Summarizer', href: '/summarizer', icon: FileText, color: 'text-violet-500' },
   { label: 'Pomodoro Timer', href: '/timer', icon: Timer, color: 'text-amber-500' },
   { label: 'Class Quizzes', href: '/quizzes', icon: FileQuestion, color: 'text-emerald-500' },

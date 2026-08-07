@@ -13,11 +13,15 @@ import {
   BarChart2,
   FileSpreadsheet,
   LogOut,
+  FileText,
+  Megaphone,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const teacherNavItems = [
   { label: 'Dashboard', href: '/teacher/dashboard', icon: LayoutDashboard, color: 'text-blue-500' },
+  { label: 'Question Paper', href: '/teacher/question-paper', icon: FileText, color: 'text-purple-400' },
+  { label: 'Notice Board', href: '/teacher/announcements', icon: Megaphone, color: 'text-red-400' },
   { label: 'Classes', href: '/teacher/classes', icon: Users, color: 'text-cyan-500' },
   { label: 'Students', href: '/teacher/students', icon: GraduationCap, color: 'text-teal-500' },
   { label: 'Quizzes', href: '/teacher/quizzes', icon: FileQuestion, color: 'text-purple-500' },

@@ -21,6 +21,7 @@ import { calculateStreak } from '@/utils/streak';
 import { supabase } from '@/lib/supabase';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import AnnouncementsWidget from '@/components/dashboard/AnnouncementsWidget';
 import { format, parseISO, differenceInCalendarDays, isToday } from 'date-fns';
 
 export default function DashboardPage() {
@@ -72,6 +73,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Teacher Live Announcements Widget */}
+      <AnnouncementsWidget />
+
       {/* Header Banner */}
       <div className="relative overflow-hidden p-6 md:p-8 rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-slate-900/80 shadow-2xl">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
